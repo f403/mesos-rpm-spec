@@ -84,8 +84,7 @@ Type=forking
 User=%{mesos_user}
 Group=%{mesos_group}
 PermissionsStartOnly=true
-ExecStartPre=/etc/sysconfig/mesos-master
-ExecStart=/usr/bin/env bash -c "%{_sbindir}/mesos-master --work_dir=%{data_dir}/master --log_dir=%{log_dir} & echo \$! >%{run_dir}/mesos-master.pid; disown \$!"
+ExecStart=/usr/bin/env BASH_ENV=/etc/sysconfig/mesos-master bash -c "%{_sbindir}/mesos-master --work_dir=%{data_dir}/master --log_dir=%{log_dir} & echo \$! >%{run_dir}/mesos-master.pid; disown \$!"
 PIDFile=%{run_dir}/mesos-master.pid
 
 [Install]
@@ -101,8 +100,7 @@ After=time-sync.target network.target
 Type=forking
 User=root
 Group=root
-ExecStartPre=/etc/sysconfig/mesos-slave
-ExecStart=/usr/bin/env bash -c "%{_sbindir}/mesos-slave --work_dir=%{data_dir}/slave --log_dir=%{log_dir} --master=\${MESOS_master} & echo \$! >%{run_dir}/mesos-slave.pid; disown \$!"
+ExecStart=/usr/bin/env BASH_ENV=/etc/sysconfig/mesos-slave bash -c "%{_sbindir}/mesos-slave --work_dir=%{data_dir}/slave --log_dir=%{log_dir} --master=\${MESOS_master} & echo \$! >%{run_dir}/mesos-slave.pid; disown \$!"
 PIDFile=%{run_dir}/mesos-slave.pid
 
 [Install]
@@ -123,9 +121,9 @@ fi
 if [ $1 = 1 ]; then
   for dir in "%{data_dir}" "%{data_dir}/master" "%{data_dir}/slave" "%{log_dir}" "%{run_dir}"; do
     [ ! -e "$dir" ] && mkdir $dir
+    chmod 0750 "$dir"
+    chown -R %{mesos_user}:%{mesos_group} "$dir"
   done
-  chmod 0750 %{data_dir}
-  chown -R %{mesos_user}:%{mesos_group} %{data_dir}/slave %{log_dir} %{run_dir}
 fi
 
 # upgrade
